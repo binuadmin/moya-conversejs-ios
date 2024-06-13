@@ -5,4 +5,22 @@
         <script src="../../src/headless/dist/converse-headless.js"></script>
         <script src="./main.js"></script>
         </head>
+        <style>
+            input{
+                display: block;
+                min-width: 300px;
+                margin: 10px 0;
+            }
+        </style>
+        <body>
+            <h1>Config:</h1>
+            <input id="ws_url" type="text" placeholder="websocker url">
+            <input id="jid" type="text" placeholder="jid">
+            <input id="password" type="text" placeholder="password">
+            <button id="mainThreadBtn">Start on Main thread</button>
+            <button id="workerThreadBtn">Start on Worker thread</button>
+            <br><br><br><br>
+            <button id="clearStore">Clear Storage</button>
+        </body>
     </html>
+

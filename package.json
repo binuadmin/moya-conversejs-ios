@@ -42,7 +42,8 @@
     "devserver": "webpack serve --config webpack/webpack.serve.js",
     "watch": "webpack --watch --config webpack/webpack.build.js --mode=development",
     "types": "tsc --declaration --emitDeclarationOnly --allowJs",
-    "check:types": "tsc --noEmit"
+    "check:types": "tsc --noEmit",
+    "start:headless": "python3 -m http.server 8000 & open http://localhost:8000/demo/headless/index.html ;  lsof -i :8000"
   },
   "repository": {
     "type": "git",

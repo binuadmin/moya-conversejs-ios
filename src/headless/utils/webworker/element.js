@@ -1,322 +1,24 @@
-/**Manual Implementation Start
-export class NamedNodeMap {
 
-
-    
-    
-    constructor(){
-        Object.defineProperty(this, 'array', {
-            value: [],
-            writable: true,
-            enumerable: false,
-            configurable: true
-        });
-    }
-
-    set(key,value){
-
-        let node = this.array.find(node=>node.key === key);
-        if(node){
-            node.value = value;
-            return;
+DOMNamedNodeMap.prototype[Symbol.iterator] = function* (){
+    let attrs = [];
+    if(this.parentNode){
+        if(this.parentNode.id){
+            let newAttr = document.createAttribute('id');
+            newAttr.value = this.parentNode.id;
+            attrs.push(newAttr);
         }
-        else{
-            node = new MockNode(key,2);
-            node.value = value;
-            this.array.push(node);
-            let index = this.array.length - 1;
-            this[index]=node;
-            
-        }
-        Object.defineProperty(this, key, {
-            value: value,
-            writable: true,
-            enumerable: false,
-            configurable: true
-        });
-        
-       
-    }
-
-    getNamedItem(key){
-        return this.array.find(node=>node.nodeName === key);
-    }
-
-    get length(){
-        return this.array.length;
-    }
-
-    get keysList(){
-        return this.array.map(node=>node.nodeName);
-    }
-
-    
-}
-
-export class MockNode {
-
-    _value;
-    _nodeValue
-    get nodeValue(){
-        return this._nodeValue;
-    }
-    get value(){
-        return this._value;
-    }
-    set nodeValue(value){
-        this._nodeValue = value;
-        this._value = value;
-    }
-    set value(value){
-        this._nodeValue = value;
-        this._value = value;
-    }
-    constructor(nodeName, nodeType) {
-        this.nodeName = nodeName;
-        this.nodeType = nodeType;
-        this.childNodes = [];
-        this.parentNode = null;
-
-         (self).elements = (self).elements || [];
-        (self).elements.push(this);
-    }
-
-    appendChild(node) {
-        this.childNodes.push(node);
-        node.parentNode = this;
-    }
-}
-
-
-
-export class MockElement extends MockNode {
-    ownerDocument;
-    setOwnerDocument(arg0) {
-        this.ownerDocument = arg0;
-        return this;
-    }
-    constructor(tagName) {
-        super(tagName, 1); // 1 is the nodeType for an element
-        this.tagName = tagName.toUpperCase();
-        this.attributes = new NamedNodeMap();
-        this.innerText = '';
-        this.innerHTML = '';
-        this.style = {};
-        this.classList = [];
-    }
-
-    setAttribute(name, value) {
-        this.attributes.set(name,value)
-    }
-
-
-
-    getElementsByTagName(tagName) {
-        let foundElements = [];
-
-        function recursiveSearch(node) {
-            if (node.tagName && node.tagName.toLowerCase() === tagName.toLowerCase()) {
-                foundElements.push(node);
-            }
-            node.childNodes.forEach(child => recursiveSearch(child));
-        }
-
-        recursiveSearch(this);
-
-        return foundElements;
-    }
-
-
-    getAttribute(name) {
-        return this.attributes[name] || null;
-    }
-
-    appendChild(child) {
-        super.appendChild(child);
-        this.updateInnerHTML();
-    }
-
-    removeChild(child) {
-        const index = this.childNodes.indexOf(child);
-        if (index > -1) {
-            this.childNodes.splice(index, 1);
-        }
-        this.updateInnerHTML();
-    }
-
-    updateInnerHTML() {
-        this.innerHTML = this.childNodes.map(child => child.outerHTML).join('');
-    }
-
-    get tag(){
-        return this.tagName.toLowerCase();
-    }
-
-    get outerHTML() {
-
-        const attrs = (this.attributes.keysList)
-            .map((key,index) => `${key}="${this.attributes[index].value}"`)
-            .join(' ');
-        
-
-        return `<${this.tag} ${attrs}>${this.innerHTML}</${this.tag}>`;
-    }
-
-    addClass(className) {
-        if (!this.classList.includes(className)) {
-            this.classList.push(className);
-            this.setAttribute('class', this.classList.join(' '));
+        if (this.parentNode.namespaceURI){
+            let newAttr = document.createAttribute('xmlns');
+            newAttr.value = this.parentNode.namespaceUri;
+            attrs.push(newAttr);
         }
     }
-
-    removeClass(className) {
-        const index = this.classList.indexOf(className);
-        if (index > -1) {
-            this.classList.splice(index, 1);
-            this.setAttribute('class', this.classList.join(' '));
-        }
+    attrs = attrs.concat(this._nodes);
+    for (let attr of attrs) {
+        yield attr;
     }
+
 }
-
-
-export class MockText extends MockNode {
-    data;
-
-    constructor(data) {
-        super('#text', 3); // 3 is the nodeType for a text node
-        this.data = data;
-    }
-}
-
-export class MockDocument extends MockNode {
-    namespaceURI;
-    qualifiedName;
-    doctype;
-    implementation;
-    documentElement;
-
-    constructor(namespace, qualifiedName, doctype) {
-        super('#document', 9); // 9 is the nodeType for a document
-        this.namespaceURI = namespace;
-        this.qualifiedName = qualifiedName;
-        this.doctype = doctype;
-        this.implementation = new MockDOMImplementation();
-       
-
-    }
-
-    createTreeWalker() {
-        return {};
-      }
-
-    createElement(tagName) {
-        return new MockElement(tagName).setOwnerDocument(this);
-    }
-
-    createTextNode(data) {
-        return new MockText(data);
-    }
-
-    addEventListener(...args){
-
-    }
-    removeEventListener(...args){
-
-    }
-
-    appendChild(node) {
-        if (node.nodeType === 1 || node.nodeType === 10) {
-            super.appendChild(node);
-        } else {
-            throw new Error("Only element and doctype nodes can be directly appended to a document.");
-        }
-    }
-}
-
-class MockHTMLDocument extends MockDocument {
-    constructor() {
-        super(null, null, null);
-        this.body = new MockElement('body');
-        this.head = new MockElement('head');
-        this.documentElement = new MockElement('html');
-        this.documentElement.appendChild(this.head);
-        this.documentElement.appendChild(this.body);
-        super.appendChild(this.documentElement);
-    }
-}
-class MockHTMLElement extends MockElement {
-    constructor(tagName) {
-        super(tagName);
-        this.style = {}; // Object to simulate inline CSS styles
-        this.id = '';
-        this.className = '';
-    }
-
-    // Example of a method specific to MockHTMLElement
-    click() {
-        console.log(`${this.tagName} element clicked.`);
-    }
-
-    // Mock implementation of style manipulation
-    setStyle(property, value) {
-        this.style[property] = value;
-    }
-
-    // Other HTML element specific methods and properties can be added here
-}
-
-
-class MockDOMImplementation {
-    constructor() {
-        // Constructor can be empty or have initialization code as needed
-    }
-
-    createDocumentType(qualifiedNameStr, publicId, systemId) {
-        // This method should return a new doctype object 
-        // with the specified qualifiedName, publicId, and systemId.
-        // For simplicity, we can just return an object with these properties.
-        return {
-            name: qualifiedNameStr,
-            publicId: publicId,
-            systemId: systemId
-        };
-    }
-
-    createDocument(namespace, qualifiedNameStr, doctype) {
-        // This method should create and return a new document object.
-        return new MockDocument(namespace, qualifiedNameStr, doctype);
-    }
-
-    createHTMLDocument(title) {
-        // This method should create and return a new HTML document.
-        const doc = new MockDocument(null, 'html', null);
-        const html = new MockElement('html');
-        const head = new MockElement('head');
-        const body = new MockElement('body');
-        const titleEl = new MockElement('title');
-        titleEl.innerText = title;
-
-        head.appendChild(titleEl);
-        html.appendChild(head);
-        html.appendChild(body);
-        doc.appendChild(html);
-
-        return doc;
-    }
-}
-
-// Example usage:
-
-console.log("auto init mock", self['auto_init_mock'], self);
-if(self['auto_init_mock']){
-    self.Element = MockElement;
-    self.Node = MockNode;
-    self.HTMLElement= MockHTMLElement;
-    self.HTMLDocument = MockHTMLDocument;
-}
-
-
-// Manual Implementation End */
 DOMElement.prototype.querySelectorAll = function (selector) {
     const results = [];
 
@@ -402,9 +104,19 @@ Object.defineProperty(DOMElement.prototype, 'innerHTML', {
     
 });
 
+Object.defineProperty(DOMText.prototype, 'outerHTML', {
+    get: function() {
+        return this.data;
+    }
+});
+
 Object.defineProperty(DOMElement.prototype, 'innerText', {
     get: function() {
         return this.firstChild instanceof DOMText ? this.firstChild.data + "" : '';
+    },
+    set : function(text){
+        let textNode = document.createTextNode(text);
+        this.appendChild(textNode);
     }
 });
 Object.defineProperty(DOMElement.prototype, 'textContent', {
@@ -426,9 +138,12 @@ Object.defineProperty(DOMText.prototype, 'nodeValue', {
 Object.defineProperty(DOMElement.prototype, 'outerHTML', {
     get: function() {
 
-        const attrs = (this.attributes._nodes)
+        let attrs = (this.attributes._nodes)
         .map((node) => `${node.name}="${node.value}"`)
         .join(' ');
+        if(this.namespaceURI && this.getAttribute('xmlns')){
+            attrs += ` xmlns="${this.namespaceURI}"`;
+        }
     
     return `<${this.tagName} ${attrs}>${this.innerHTML}</${this.tagName}>`;
     }
@@ -491,6 +206,9 @@ DOMNamedNodeMap.prototype.properlySetArray = function () {
 let oldGetAttr = DOMElement.prototype.getAttribute;
 DOMElement.prototype.getAttribute = function (name) {
     let val = oldGetAttr.call(this, name);
+    if(!val && name==='xmlns') {
+        val = this.getNamespaceURI();
+    }
     return val + '';
 
 }

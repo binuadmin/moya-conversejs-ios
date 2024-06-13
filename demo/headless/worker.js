@@ -1,4 +1,4 @@
-async function init() {
+async function init(configObject) {
     var hasError = false;
     try {
         //Set constants
@@ -38,35 +38,23 @@ async function init() {
         //Now We can load the main script
         importScripts('/src/headless/dist/converse-headless.js');
         //End of loading main script
-
+        setTimeout(()=>{
+            console.log("WINDOW . Converse", window.converse);
+        }, 1000)
         //Converse initialization:
         let converseModule = window.converse;
         let { converse, _converse, api } = converseModule;
 
-        converse.initialize({
-            // websocket_url: 'ws://34.241.102.241:5080/ws', // Please use this connection manager only for testing purposes
-            websocket_url: 'wss://xmpp.systest.moya.app:5443/ws', // Please use this connection manager only for testing purposes
-            // bosh_service_url: 'https://convxaersejs.org/http-bind/', // Please use this connection manager only for testing purposes
-            allow_bookmarks: false,
-            allow_multiple_devices: false,
-            authentication: 'login',
-            auto_join_on_invite: true,
-            auto_login: true,
-            auto_reconnect: true,
-            allow_non_roster_messaging: true,
-            discover_connection_methods: false,
-            jid: '27794915044@binu-test.m.in-app.io',
-            loglevel: 'info',
-            omemo_default: true,
-            persistent_store: 'IndexedDB',
-            password: 'UOfxZIiIds',
-            whitelisted_plugins: ['converse-omemo'],
-        });
+        converse.initialize(configObject);
     }
 }
-init();
+// init();
 onmessage = async function (e) {
-    console.log(e.data);
+    console.log("DATA",e.data);
+    if(e.data.jid && e.data.password)
+    {
+    return init(e.data)
+    }   
     let _c = window.converse._converse;
     let chat = await _c.api.chats.open('4917692171798@binu-test.m.in-app.io');
     console.log(chat);
